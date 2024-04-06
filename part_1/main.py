@@ -38,6 +38,13 @@ def calculate_min_payments(balances):
 
     return payments
 
+def main(input_path, output_path):
+    csv_data = read_csv(input_path)
+    balances = calculate_balances(csv_data)
+    payments = calculate_min_payments(balances)
+    with open(output_path, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        csv_writer.writerows(payments)
 
 if __name__ == "__main__":
 
@@ -45,11 +52,4 @@ if __name__ == "__main__":
         logger.error('Incorrect number of arguments')
         sys.exit(1)
 
-    file_path = sys.argv[1]
-    output_path = sys.argv[2]
-    csv_data = read_csv(file_path)
-    balances = calculate_balances(csv_data)
-    payments = calculate_min_payments(balances)
-    with open(output_path, 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerows(payments)
+    main(sys.argv[1], sys.argv[2])
