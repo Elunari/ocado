@@ -1,21 +1,28 @@
 import csv
 import sys
-import pandas as pd
 import logging
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
 
-def read_csv(filename):
-    data = pd.read_csv(filename, header=None)
+def read_csv(file_path):
+    
+    data = []
+    with open(file_path, 'r') as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            data.append(row)
     return data
 
 
 def calculate_balances(data):
+    
     balances = defaultdict(int)
-    for _, row in data.iterrows():
+
+    for row in data:
         creditor, debtor, amount = row
+        amount = int(amount)
         balances[creditor] -= amount
         balances[debtor] += amount
     return balances
