@@ -1,10 +1,12 @@
 import time
+
 from src.aws import get_s3_client, get_sqs_client
 from typing import TYPE_CHECKING
 from src.config import get_config
 import json
 import logging
 from src.debts_simplifier import calculate_balances, calculate_min_payments
+from botocore.exceptions import ClientError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -17,20 +19,30 @@ def is_debt_message(response):
     return "debts_id" in response and isinstance(response["debts_id"], str)
 
 
-def receive_debt_from_s3(debtId, s3_client, bucket_name):
-    debts_object = s3_client.get_object(
-        Bucket=bucket_name,
-        Key=debtId,
-    )
-    debts_data = map(
-        lambda x: x.split(","), debts_object["Body"].read().decode("utf-8").splitlines()
-    )
-    return debts_data
+def receive_debt_from_s3(debtId, s3_client: "S3Client", bucket_name):
+    logger.info(f"Receiving message from S3 bucket '{bucket_name}' with key '{debtId}'.")
+    try:
+        debts_object = s3_client.get_object(
+            Bucket=bucket_name,
+            Key=debtId,
+        )
+        debts_data = map(
+            lambda x: x.split(","), debts_object["Body"].read().decode("utf-8").splitlines()
+        )
+        return debts_data
+    except ClientError as e:
+        logger.error(f"Failed to receive message from S3: {e}")
+        raise
 
 
-def send_result_to_s3(debtId, payments, s3_client, bucket_name):
-    key = debtId + "_results"
-    s3_client.put_object(Bucket=bucket_name, Key=key, Body=payments)
+def send_result_to_s3(debtId, payments, s3_client: "S3Client", bucket_name):
+    key = f"{debtId}_results"
+    logger.info(f"Sending result to S3 bucket '{bucket_name}' with key '{key}'.")
+    try:
+        s3_client.put_object(Bucket=bucket_name, Key=key, Body=payments)
+    except ClientError as e:
+        logger.error(f"Failed to send result to S3: {e}")
+        raise
 
 
 def prepare_message_for_s3(payments):

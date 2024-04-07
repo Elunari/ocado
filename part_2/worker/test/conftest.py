@@ -9,7 +9,6 @@ TEST_WORKER_QUEUE_NAME = "test-worker-queue"
 @pytest.fixture(scope="session", autouse=True)
 def s3_client():
     with mock_aws():
-
         # mock clients
         s3_client = boto3.client("s3")
 
